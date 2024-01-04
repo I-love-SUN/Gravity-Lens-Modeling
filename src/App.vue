@@ -21,6 +21,5 @@
 <script>
     name = 'home';
     export default {
-
     }
 </script>

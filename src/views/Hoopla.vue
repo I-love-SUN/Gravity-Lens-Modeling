@@ -71,7 +71,6 @@
                 imputUrl:'',
 
             }
-
         },
         methods:{
             handleSave(){

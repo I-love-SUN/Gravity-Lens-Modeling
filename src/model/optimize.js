@@ -26,6 +26,7 @@ window.optimize = (function () {
         return typeof(x) !== "undefined" && x !== null;
     };
 
+
     // ======= //
     //         //
     // VECTORS //

@@ -30,7 +30,6 @@ export default {
 
 <style>
 
-
   .bg-img {
     background-image: url("../assets/Bg.jpg");
     background-repeat: no-repeat;

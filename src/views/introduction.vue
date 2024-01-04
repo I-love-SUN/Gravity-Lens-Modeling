@@ -95,6 +95,7 @@
     font-family: Times,Arial,sans-serif;
     text-align: justify;
   }
+
   h2{
    width: 1000px;
    text-indent: 40px;

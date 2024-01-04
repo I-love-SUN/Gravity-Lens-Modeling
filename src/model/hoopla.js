@@ -270,7 +270,6 @@
 		if(document.getElementById('status')) document.getElementById('status').innerHTML = msg;
 	}
 
-
 	// We need to set up.
 	Hoopla.prototype.setup = function(){
 

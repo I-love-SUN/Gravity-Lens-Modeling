@@ -16,3 +16,4 @@ new Vue({
 }).$mount('#app')
 
 axios.defaults.baseURL='/api';
+

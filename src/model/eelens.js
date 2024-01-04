@@ -11,7 +11,6 @@
 // Enclose the Javascript
 (function(exports) {
 	exports.Lens = Lens;
-
 	function Lens(input){
 		// INPUTS:
 		//    width       calculation (canvas) grid width in pixels
