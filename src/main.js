@@ -15,5 +15,5 @@ new Vue({
   render: h => h(App)
 }).$mount('#app')
 
-axios.defaults.baseURL='/api';
+// axios.defaults.baseURL='/api';
 

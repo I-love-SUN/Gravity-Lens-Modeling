@@ -23,8 +23,8 @@ const routes = [
       },
       {
         path: '/hoopla',
-        name: 'Hoopla',
-        component: () => import('../views/Hoopla')
+        name: 'hoopla_model',
+        component: () => import('../views/hoopla_model')
       },
       {
         path: '/instruction',

@@ -11,6 +11,7 @@
 // Enclose the Javascript
 (function(exports) {
 	exports.Lens = Lens;
+
 	function Lens(input){
 		// INPUTS:
 		//    width       calculation (canvas) grid width in pixels
@@ -66,48 +67,54 @@
 		// Check inputs... coordinates/distances are in arcseconds
 		if(!component) return this;
 		if(!component.plane || typeof component.plane!=="string") return this;
-		if(component.plane != "lens" && component.plane != "source") return this;
-		if(component.plane == "lens"){
+		if(component.plane !== "lens" && component.plane !== "source") return this;
+		if(component.plane === "lens"){
 			if(typeof component.x!=="number" || typeof component.y!=="number" || typeof component.theta_e!=="number"|| typeof component.ell!=="number"|| typeof component.ang!=="number") return this;
-		}else if (component.plane == "source"){
+		}else if (component.plane === "source"){
 			if(typeof component.x!=="number" || typeof component.y!=="number" || typeof component.size!=="number") return this;
 		}
 		//alert(component.theta_e);
 
 		// Transform angular coordinates and distances to pixel coordinate system:
-		var coords = this.ang2pix({x:component.x, y:component.y});
+		let coords = this.ang2pix({x:component.x, y:component.y});
 
 		// Construct a new version of the component otherwise the original gets changed
 		//var c = { x : coords.x, y: coords.y, theta_e: component.theta_e, plane : component.plane };
-		var c = { x : coords.x, y: coords.y, theta_e: component.theta_e, ell : component.ell, ang : component.ang, plane : component.plane };
+		let c = { x : coords.x, y: coords.y, theta_e: component.theta_e, ell : component.ell, ang : component.ang, plane : component.plane };
 
-		if(c.plane == "lens"){
+		if(c.plane === "lens"){
 			c.theta_e = component.theta_e;
 			c.theta_e_px = c.theta_e / this.pixscale;
 		}
-		if(c.plane == "source"){
+		if(c.plane === "source"){
 			c.size = component.size;
 			c.size_px = c.size / this.pixscale;
 		}
 
 		// Push the c into the relevant array:
-		if(c.plane == "lens") this.lens.push(c);
-		if(c.plane == "source") this.source.push(c);
-		console.log("添加一个椭圆，当前数量："+this.lens.length);
+		if(c.plane === "lens") {
+			this.lens.push(c);
+			// console.log("添加一个lens，当前数量："+this.lens.length);
+
+		}
+		if(c.plane === "source"){
+			this.source.push(c);
+			// console.log("添加一个source，当前数量："+this.source.length);
+		}
 		return this; // Allow this function to be chainable
 	}
 
 
 	//----------------------------------------------------------------------------
 	// From an x,y position in pixel coords,
-    // get the equivalent index in the 1D array
+	// get the equivalent index in the 1D array
 	Lens.prototype.xy2i = function(x,y){
-		var i = y + x*this.h;
+		let i = y + x*this.h;
 		if(i >= this.w*this.h) i = this.w*this.h-1;
 		return i;
 	}
 	Lens.prototype.altxy2i = function(x,y){
-		var i = x + y*this.w;
+		let i = x + y*this.w;
 		if(i >= this.h*this.w) i = this.h*this.w-1;
 		return i;
 	}
@@ -129,8 +136,8 @@
 	Lens.prototype.removeAll = function(plane){
 		if(!plane) return this;
 		if(typeof plane !== "string") return this;
-		if(plane == "source") this.source = [];
-		if(plane == "lens") this.lens = [];
+		if(plane === "source") this.source = [];
+		if(plane === "lens") this.lens = [];
 		return this;
 	}
 	//----------------------------------------------------------------------------
@@ -138,19 +145,19 @@
 	// 计算矢量 alpha 和张量放大率
 	Lens.prototype.calculateAlpha = function(){
 		// Set arrays to zero initially:
-		for(var i = 0 ; i < this.w*this.h ; i++){
+		for(let i = 0 ; i < this.w*this.h ; i++){
 			this.alpha[i] = { x: 0.0, y: 0.0 };
 			this.mag[i] = {kappa: 0.0, gamma1: 0.0, gamma2: 0.0, inverse: 0.0}
 		}
 		// Declare outside the for loop for efficiency
-		var x, y;
-		var tr, cs, sn;
-		var rc = 0.0;
-		var ql;
+		let x, y;
+		let tr, cs, sn;
+		let rc = 0.0;
+		let ql;
 		// Loop over pixels:
-		for(var i = 0 ; i < this.w*this.h ; i++){
+		for(let i = 0 ; i < this.w*this.h ; i++){
 			// Loop over lens components:
-			for(var j = 0 ; j < this.lens.length ; j++){
+			for(let j = 0 ; j < this.lens.length ; j++){
 
 				if(this.lens[j].ell <1.0){
 					ql = this.lens[j].ell;
@@ -225,14 +232,14 @@
 	Lens.prototype.calculateImage = function(){
 		// Define some variables outside of the loop
 		// as declaring them is expensive
-		var d = { x: 0, y: 0 };
-		var i = 0;
-		var r2 = 0;
+		let d = { x: 0, y: 0 };
+		let i = 0;
+		let r2 = 0;
 		// Since for a Gaussian, half light radius (size) = sigma * sqrt(2*ln(2))
 		//var factor = 1.0/(0.693*this.source[0].size_px*this.source[0].size_px)
-		var sig2 = this.source[0].size_px*this.source[0].size_px*0.693
-		var ns = this.source.length;
-		var row, col, s, v;
+		let sig2 = this.source[0].size_px*this.source[0].size_px*0.693
+		let ns = this.source.length;
+		let row, col, s, v;
 		for(row = 0 ; row < this.h ; row++){
 			for(col = 0 ; col < this.w ; col++){
 				v = 0;
@@ -260,14 +267,14 @@
 	Lens.prototype.calculateTrueImage = function(){
 		// Define some variables outside of the loop
 		// as declaring them is expensive
-		var d = { x: 0, y: 0 };
-		var i = 0;
-		var r2 = 0;
-		var sig2 = this.source[0].size_px*this.source[0].size_px*0.693
+		let d = { x: 0, y: 0 };
+		let i = 0;
+		let r2 = 0;
+		let sig2 = this.source[0].size_px*this.source[0].size_px*0.693
 		//var factor = 1.0/(this.source[0].size_px*this.source[0].size_px)
 		// Since for a Gaussian, half light radius (size) = sigma * sqrt(2*ln(2))
-		var ns = this.source.length;
-		var row, col, s, v;
+		let ns = this.source.length;
+		let row, col, s, v;
 		// Loop over x and y. Store 1-D pixel index as i.
 		for(row = 0 ; row < this.h ; row++){
 			for(col = 0 ; col < this.w ; col++){
@@ -290,3 +297,4 @@
 		return this; // Allow this function to be chainable
 	}
 })(typeof exports !== "undefined" ? exports : window);
+

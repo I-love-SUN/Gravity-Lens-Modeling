@@ -14,6 +14,13 @@
  */
 
 // Enclose the Javascript
+import  "@/model/canvas";
+import  "@/model/eelens";
+import  "@/model/conrec";
+import {Canvas} from "@/model/canvas";
+import {Lens} from "@/model/eelens";
+import {Conrec} from "@/model/conrec";
+
 (function(exports) {
 	exports.Hoopla = Hoopla;
 
@@ -27,19 +34,23 @@
 		this.id = (obj && typeof obj.id == "string") ? obj.id : "hoopla-model";
 		this.pixscale = (obj && typeof obj.pixscale == "number") ? obj.pixscale : 0.03;
 
+		console.log("hoopla-----------------------");
+
 		// Set up the canvas for drawing the model image etc:
 		this.paper = new Canvas({ 'id': this.id });
 
 		this.srcmodelPaper = new Canvas({'id': this.srcmodel});
 		this.freezeSrcModel = false;
-		var _this = this;
-		this.srcmodelPaper.canvas.onclick = function() {
-			_this.freezeSrcModel = _this.freezeSrcModel ? false: true;
-		};
+		let _this = this;
+		// this.srcmodelPaper.canvas.onclick = function() {
+		// 	_this.freezeSrcModel = !_this.freezeSrcModel;
+		// };
 
 		this.predictionPaper = new Canvas({'id': this.prediction});
 
     	// Get the canvas width and height:
+		// this.width = obj.width;
+		// this.height = obj.height;
 		this.width = this.predictionPaper.width;
 		this.height = this.predictionPaper.height;
 
@@ -48,6 +59,7 @@
     	this.img = { complete: false };
     	this.showcrit = true;
 
+    	// console.log(this)
 		// Create an instance of a lens:
 		this.lens = new Lens({ 'width': this.width, 'height': this.height, 'pixscale': this.pixscale});
 
@@ -88,10 +100,11 @@
 	}
 
 	Hoopla.prototype.updateModel = function(components) {
+		let source;
 		console.log('updateModel');
 		if (components.length === 0) {
 			if (this.models[0].components.length === 0) {
-				var source = this.models[0].source;
+				source = this.models[0].source;
 				components.splice(0, 0, source);
 				this.models[0].components = components;
 
@@ -110,11 +123,11 @@
 				}
 			} else {
 				if (this.models[0].components[0].plane === "source") {
-					var source = this.models[0].components[0];
+					source = this.models[0].components[0];
 					components.splice(0, 0, source);
 					this.models[0].components = components;
 				} else {
-					var source = this.models[0].source;
+					source = this.models[0].source;
 					components.splice(0, 0, source);
 					this.models[0].components = components;
 				}
@@ -125,7 +138,7 @@
 
 	//计算数据的轮廓
 	Hoopla.prototype.getContours = function(data,z){
-		var c = new Conrec();
+		let c = new Conrec();
 
 		// Check inputs
 		if(typeof data!=="object") return c;
@@ -133,14 +146,14 @@
 		if(data.length < 1) return c;
 		if(data[0].length < 1) return c;
 
-		var ilb = 0;
-		var iub = data.length-1;
-		var jlb = 0;
-		var jub = data[0].length-1;
-		var idx = new Array(data.length);
-		var jdx = new Array(data[0].length);
-		for(var i = 0 ; i < idx.length ; i++) idx[i] = i+1;
-		for(var j = 0 ; j < jdx.length ; j++) jdx[j] = j+1;
+		let ilb = 0;
+		let iub = data.length - 1;
+		let jlb = 0;
+		let jub = data[0].length - 1;
+		let idx = new Array(data.length);
+		let jdx = new Array(data[0].length);
+		for(let i = 0 ; i < idx.length ; i++) idx[i] = i+1;
+		for(let j = 0 ; j < jdx.length ; j++) jdx[j] = j+1;
 
 		// contour(d, ilb, iub, jlb, jub, x, y, nc, z)
 		// d               ! matrix of data to contour
@@ -157,9 +170,9 @@
 	Hoopla.prototype.drawContours = function(canvas, c, opt){
 		if(c.length < 1) return;
 
-		var color = (opt && typeof opt.color==="string") ? opt.color : '#FFFFFF';
-		var lw = (opt && typeof opt.lw==="number") ? opt.lw : 1;
-		var i, j, l;
+		let color = (opt && typeof opt.color==="string") ? opt.color : '#FFFFFF';
+		let lw = (opt && typeof opt.lw==="number") ? opt.lw : 1;
+		let i, j, l;
 		canvas.ctx.strokeStyle = color;
 		canvas.ctx.lineWidth = lw;
 		for(l = 0; l < c.length ; l++){
@@ -183,33 +196,33 @@
 	// Draw a specific component of the Lens object
 	Hoopla.prototype.drawComponent = function(mode){
 
-		lens = this.lens;
-		canvas = this.paper;
+		let lens = this.lens;
+		let canvas = this.paper;
 
 		if(!mode || typeof mode!=="string") return;
 
 		// Have we previously made this component layer?
-		var previous = (canvas.clipboard[mode]) ? true : false;
+		let previous = (canvas.clipboard[mode]) ? true : false;
 
 		// Load in the previous version if we have it (this will save us setting the RGB)
-		var imgData = (previous) ? canvas.clipboard[mode] : canvas.ctx.createImageData(lens.w, lens.h);
-		var pos = 0;
-		var c = [0, 0, 0];
+		let imgData = (previous) ? canvas.clipboard[mode] : canvas.ctx.createImageData(lens.w, lens.h);
+		let pos = 0;
+		let c = [0, 0, 0];
 
 		// The RGB colours
-		if(mode == "lens") c = [60, 60, 60];
-		else if(mode == "mag") c = [0, 120, 0];
+		if(mode === "lens") c = [60, 60, 60];
+		else if(mode === "mag") c = [0, 120, 0];
 		// else if(mode == "image") c = [195, 215, 255];
 		// Better color for CFHTLS examples:
-        else if(mode == "image") c = [115, 185, 255];
+        else if(mode === "image") c = [115, 185, 255];
 
 		// We just want to draw sources
-		if(mode == "source"){
+		if(mode === "source"){
 			canvas.ctx.fillStyle = "#FF9999";
 			canvas.ctx.strokeStyle = "#FFFFFF";
-			for(var i = 0 ; i < lens.source.length ; i++){
+			for(let i = 0 ; i < lens.source.length ; i++){
 				// Add a circle+label to show where the source is
-				var r = 5;
+				let r = 5;
 				canvas.ctx.beginPath();
 				canvas.ctx.arc(lens.source[i].x-parseInt(r/2), lens.source[i].y-parseInt(r/2), r, 0 , 2 * Math.PI, false);
 				canvas.ctx.strokeText("Source "+(i+1),lens.source[i].x+r, lens.source[i].y+r);
@@ -220,7 +233,7 @@
 		}
 
 		// Loop over the components
-		for(var i = 0; i < lens.w*lens.h ; i++){
+		for(let i = 0; i < lens.w*lens.h ; i++){
 
 			// If we've not drawn this layer before we should set the RGB
 			if(!previous){
@@ -235,13 +248,13 @@
 			}
 
 			// Alpha channel
-			if(mode == "lens"){
+			if(mode === "lens"){
 				// MAGIC number 0.7 -> Math.round(255*0.7) = 179
 				imgData.data[pos+3] = 179*Math.sqrt(lens.mag[i].kappa);
-			}else if(mode == "mag"){
+			}else if(mode === "mag"){
 				// MAGIC number 0.01 -> Math.round(255*0.01) = 3
 				imgData.data[pos+3] = 3/Math.abs(lens.mag[i].inverse);
-			}else if(mode == "image"){
+			}else if(mode === "image"){
 				// MAGIC number 0.1, trades off with blur steps... -> Math.round(255*0.2) ~ 50
 				imgData.data[pos+3] = 50*lens.predictedimage[i];
 				// Without blurring:
@@ -255,7 +268,7 @@
 		// Keep a copy of the image in a clipboard named <mode>
 		canvas.copyToClipboard(mode,imgData);
 
-		if(mode == "image"){
+		if(mode === "image"){
 			// Blur the image? Try without!
 			imgData = canvas.blur(imgData, lens.w, lens.h);
 		}
@@ -274,7 +287,7 @@
 	Hoopla.prototype.setup = function(){
 
 		this.buttons = { crit: document.getElementById('criticalcurve') };
-		var _obj = this;
+		let _obj = this;
 		if(this.buttons.crit){
 			addEvent(this.buttons.crit,"click",function(e){
 				_obj.showcrit = !_obj.showcrit;
@@ -290,15 +303,24 @@
 		addEvent(this.paper.canvas,"mouseover",function(e){
 			_obj.trigger("mouseover")
 		});
+		addEvent(this.paper.canvas,"click",(e)=>{
+			_obj.freezeSrcModel = !_obj.freezeSrcModel;
+			let tag = document.getElementById('tag');
+			if(_obj.freezeSrcModel){
+				tag.style.display = "block";
+			}else{
+				tag.style.display = "none";
+			}
 
+		});
 		return this;
 	}
 
 	// Return a model by name
 	Hoopla.prototype.getModel = function(name){
 		if(typeof name === "string"){
-			for(var i = 0; i < this.models.length; i++){
-				if(this.models[i].name==name) return this.models[i];
+			for(let i = 0; i < this.models.length; i++){
+				if(this.models[i].name===name) return this.models[i];
 			}
 		}
 		// No match so return the first model
@@ -307,29 +329,32 @@
 
 	// 初始化透镜模型
 	Hoopla.prototype.init = function(inp,fnCallback){
-		// console.log("init");
+		console.log("init");
+
 		this.model = this.getModel(inp);
 		let _this = this;
 		_this.freezeSrcModel=false;
-		// console.log('444444444444444');
 		if(typeof this.model.src === "string") this.loadImage(this.model.src);
 		if(typeof this.model.components === "object"){
 			this.lens.removeAll('lens');
 			this.lens.removeAll('source');
-			for(var i = 0; i < this.model.components.length ; i++){
+
+
+			for(let i = 0; i < this.model.components.length ; i++){
 				this.lens.add(this.model.components[i]);
 			}
+			// console.log(this.lens);
 
 			this.lens.calculateAlpha();
 			this.lens.calculateImage();
 
 			this.critcurve = [];
 			this.caustics = [];
-			var lcontours = [];
+			//这段代码是画出Source Plane和Image Plane上面的计算后的椭圆模型轮廓
 			if(typeof Conrec==="function"){
-				var i, row, col;
+				let i, row, col;
 				// Critical curve:
-				var invmag = new Array(this.lens.h);
+				let invmag = new Array(this.lens.h);
 				for(row = 0 ; row < this.lens.h ; row++){
 					invmag[row] = new Array(this.lens.w);
 					for(col = 0 ; col < this.lens.w ; col++){
@@ -337,17 +362,17 @@
 						invmag[row][col] = this.lens.mag[i].inverse;
 					}
 				}
-				var contours = this.getContours(invmag,[0.0]);
+				let contours = this.getContours(invmag,[0.0]);
 				this.critcurve = contours.contourList();
 
 				// Caustics:
 				this.caustics = new Array(this.critcurve.length);
 				// Loop over separate loops of the critcurve contour, of which there are c.length:
-				var c = this.critcurve;
-				for(l = 0; l < c.length ; l++){
+				let c = this.critcurve;
+				for(let l = 0; l < c.length ; l++){
 					this.caustics[l] = new Array(this.critcurve[l].length);
 					// Loop over all the points in this contour, mapping them back to the source plane:
-					for(k = 0; k < c[l].length ; k++) {
+					for(let k = 0; k < c[l].length ; k++) {
 						i = this.lens.altxy2i(Math.round(c[l][k].x),Math.round(c[l][k].y));
 						this.caustics[l][k] = {x: (Math.round(c[l][k].x - this.lens.alpha[i].x)), y: (Math.round(c[l][k].y - this.lens.alpha[i].y))};
 					}
@@ -355,11 +380,15 @@
 			}
 		}
 
+		// console.log("===================================================================")
+		// console.log(this.paper);
+		// console.log(this.srcmodelPaper);
+		// console.log(this.predictionPaper)
 
-		this.paper.clear();
-		// this.srcmodelPaper.clear();
+		// this.paper.clear();
+		this.srcmodelPaper.clear();
 		this.predictionPaper.clear();
-		// console.log('1111111111111111');
+
 		// Take a copy of the blank <canvas>
 		this.paper.copyToClipboard();
 
@@ -367,17 +396,18 @@
 		this.events['mousemove'] = "";
 
 		// Bind the callback events
-		var e = ["mousemove","mouseover","mouseout"];
-		var ev = "";
+		let e = ["mousemove","mouseover","mouseout"];
+		let ev = "";
 
-		for(var i = 0; i < e.length; i++){
+		for(let i = 0; i < e.length; i++){
 			this.paper.events[e[i]] = "";
 			if (e[i] === "mousemove") {
+				// 这里绑定的是canvas画布的事件
 				this.srcmodelPaper.bind(e[i], { ev:ev, hoopla:this }, function(e) {
 					_this.e = {x:e.x, y:e.y};
 					if (!_this.freezeSrcModel) {
+
 						e.data.hoopla.update(e);
-						// console.log("22222222222222");
 					}
 				});
 			}
@@ -399,16 +429,16 @@
 		delete this.models[0].source;
 		delete this.models[0].PSFwidth;
 
-		var str = JSON.stringify(this.models[0],
+		let str = JSON.stringify(this.models[0],
 								 function(key, val) {
 									 return val.toFixed ? Number(val.toFixed(3)):val;
 								 }, 4);
 
-		var link = document.createElement('a');
+		let link = document.createElement('a');
 		//link.download = 'lensModels.json';
 
 		link.download = this.models[0].name+'.JSON';
-		var blob = new Blob([str], {type: 'text/plain'});
+		let blob = new Blob([str], {type: 'text/plain'});
 		link.href = window.URL.createObjectURL(blob);
 		link.click();
 	}
@@ -418,11 +448,11 @@
 		if (!e) { return; }
 		// console.log('update image');
 		// Get the size of the existing source
-		var src = this.lens.source[0];
+		let src = this.lens.source[0];
 		// Remove existing sources
 		this.lens.removeAll('source');
 		// Set the lens source to the current cursor position, transforming pixel coords to angular coords:
-		var coords = this.lens.pix2ang({x:e.x, y:e.y});
+		let coords = this.lens.pix2ang({x:e.x, y:e.y});
 		// Update the source x,y positions
 		src.x = coords.x;
 		src.y = coords.y;
@@ -437,8 +467,8 @@
 
 		if (this.showcrit) {
 			this.srcmodelPaper.clear();
-			var critcurve = this.downsample(this.critcurve);
-			var caustics = this.downsample(this.caustics);
+			let critcurve = this.downsample(this.critcurve);
+			let caustics = this.downsample(this.caustics);
 
 			this.drawContours(this.predictionPaper, critcurve, {color:'#ff6666', lw:1.1});
 			this.drawContours(this.srcmodelPaper, caustics, {color:'#66ff66', lw:1.1});
@@ -448,9 +478,9 @@
 		this.lens.calculateTrueImage();
 		// Calculate and overlay source outline:
 		if(typeof Conrec === "function"){
-			var i, row, col;
-			var timage = new Array(this.lens.h);
-			for(row = 0 ; row < this.lens.h ; row++){
+			let i, row, col;
+			let timage = new Array(this.lens.h);
+			for(let row = 0 ; row < this.lens.h ; row++){
 				timage[row] = new Array(this.lens.w);
 				for(col = 0 ; col < this.lens.w ; col++){
 					i = row + col*this.lens.h;
@@ -458,15 +488,15 @@
 				}
 			}
 
-			var lasso = this.getContours(timage, [0.5]);
-      		outline = lasso.contourList();
+			let lasso = this.getContours(timage, [0.5]);
+      		let outline = lasso.contourList();
       		outline = this.downsample(outline);
 			this.drawContours(this.srcmodelPaper, outline, {color:'#66ccff', lw:1.1});
 		}
 		// Calculate and overlay arcs outline:
 		if(typeof Conrec === "function"){
-			var i, row, col;
-			var pimage = new Array(this.lens.h);
+			let i, row, col;
+			let pimage = new Array(this.lens.h);
 			for(row = 0 ; row < this.lens.h ; row++){
 				pimage[row] = new Array(this.lens.w);
 				for(col = 0 ; col < this.lens.w ; col++){
@@ -474,22 +504,22 @@
 					pimage[row][col] = this.lens.predictedimage[i];
 				}
 			}
-			var lasso = this.getContours(pimage, [0.5]);
-      		outline = lasso.contourList();
+			let lasso = this.getContours(pimage, [0.5]);
+      		let outline = lasso.contourList();
       		outline = this.downsample(outline);
 			this.drawContours(this.predictionPaper, outline, {color:'#66ccff', lw:1.1});
 		}
 	}
 	// Downsample contours from a list of contours
 	Hoopla.prototype.downsample = function(contourList) {
-		var factor = 4;
-    	var downsampledList = [];
+		let factor = 4;
+		let downsampledList = [];
 
-    	for (var i = 0; i < contourList.length; i += 1) {
-			var contour = contourList[i];
-			var downsampled = [];
+    	for (let i = 0; i < contourList.length; i += 1) {
+			let contour = contourList[i];
+			let downsampled = [];
 
-			for (var j = 0; j < contour.length; j += factor) {
+			for (let j = 0; j < contour.length; j += factor) {
 				downsampled.push(contour[j]);
 			}
 			downsampledList.push(downsampled);
@@ -499,11 +529,11 @@
 
 	// Loads the image file. You can provide a callback or have
 	Hoopla.prototype.loadImage = function(source, fnCallback){
-		var src = "";
+		let src = "";
 		if(typeof source==="string") src = source;
 		if(typeof src=="string" && src){
 			this.image = null
-			var _obj = this;
+			let _obj = this;
 			this.img = new Image();
 			this.img.onload = function(){
 				_obj.update();
@@ -535,10 +565,10 @@
 	Hoopla.prototype.trigger = function(ev,args){
 		if(typeof ev != "string") return;
 		if(typeof args != "object") args = {};
-		var o = [];
+		let o = [];
 		if(typeof this.events[ev]=="object"){
-			for(var i = 0 ; i < this.events[ev].length ; i++){
-				var e = G.extend(this.events[ev][i].e,args);
+			for(let i = 0 ; i < this.events[ev].length ; i++){
+				let e = G.extend(this.events[ev][i].e,args);
 				if(typeof this.events[ev][i].fn == "function") o.push(this.events[ev][i].fn.call(this,e))
 			}
 		}
@@ -548,13 +578,13 @@
 	// Helpful functions
 
 	// Cross-browser way to add an event
-	if(typeof addEvent!="function"){
+	// if(typeof addEvent!="function"){
 		function addEvent(oElement, strEvent, fncHandler){
 			if(!oElement) { console.log(oElement); return; }
 			if(oElement.addEventListener) oElement.addEventListener(strEvent, fncHandler, false);
 			else if(oElement.attachEvent) oElement.attachEvent("on" + strEvent, fncHandler);
 		}
-	}
+	// }
 
 	// Extra mathematical/helper functions that will be useful - inspired by http://alexyoung.github.com/ico/
 	var G = {};
@@ -577,3 +607,4 @@
 	} else G.extend = Object.extend;
 
 })(typeof exports !== "undefined" ? exports : window);
+

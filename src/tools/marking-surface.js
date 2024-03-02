@@ -901,6 +901,10 @@
       if (tool == null) {
         tool = new this.tool;
       }
+      if(this.tools.length>=1){
+        console.log("数量超过1个，不再添加");
+        return;
+      }
       tool.markingSurface = this;
       this.tools.push(tool);
       this.root.el.appendChild(tool.el);

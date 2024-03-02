@@ -33,15 +33,15 @@
 	};
 
 	G.variance = function(a) {
-		var mean = G.mean(a), variance = 0;
-		for (var i = 0; i < a.length; i++)
+		let mean = G.mean(a), variance = 0;
+		for (let i = 0; i < a.length; i++)
 			variance += Math.pow(a[i] - mean, 2);
 		return variance / (a.length - 1);
 	};
 
 	if (typeof Object.extend === 'undefined') {
 		G.extend = function(destination, source) {
-			for (var property in source) {
+			for (let property in source) {
 				if (source.hasOwnProperty(property)) destination[property] = source[property];
 			}
 			return destination;
@@ -69,55 +69,52 @@
 			if(typeof el=="object" && el.tagName != "CANVAS"){
 				// Looks like the element is a container for our <canvas>
 				el.setAttribute('id',this.id+'holder');
-				var canvas = document.createElement('canvas');
+				let canvas = document.createElement('canvas');
 				canvas.style.display='block';
 				canvas.setAttribute('width',this.width);
 				canvas.setAttribute('height',this.height);
 				canvas.setAttribute('id',this.id);
 				el.appendChild(canvas);
 				// For excanvas we need to initialise the newly created <canvas>
-				if(/*@cc_on!@*/false) el = G_vmlCanvasManager.initElement(this.canvas);
+
 			}else{
 				// Define the size of the canvas
 				// Excanvas doesn't seem to attach itself to the existing
 				// <canvas> so we make a new one and replace it.
-				if(/*@cc_on!@*/false){
-					var canvas = document.createElement('canvas');
-					canvas.style.display='block';
-					canvas.setAttribute('width',this.width);
-					canvas.setAttribute('height',this.height);
-					canvas.setAttribute('id',this.id);
-					el.parentNode.replaceChild(canvas,el);
-					if(/*@cc_on!@*/false) el = G_vmlCanvasManager.initElement(elcanvas);
-				}else{
-					el.setAttribute('width',this.width);
-					el.setAttribute('height',this.height);
-				}
+				el.setAttribute('width', this.width);
+				el.setAttribute('height', this.height);
 			}
 			this.canvas = document.getElementById(this.id);
-		}else this.canvas = el;
-		this.ctx = (this.canvas) ? this.canvas.getContext("2d") : null;
+		}else
+			this.canvas = el;
+		this.ctx = (this.canvas) ? this.canvas.getContext("2d",{willReadFrequently:true}) : null;
 
 		// The object didn't exist before so we add event listeners to it
-		var _obj = this;
+		let _obj = this;
 		addEvent(this.canvas,"click",function(e){
+			// console.log("click event")
 			_obj.getCursor(e);
 			_obj.trigger("click",{x:_obj.cursor.x,y:_obj.cursor.y});
 		});
 		addEvent(this.canvas,"mousemove",function(e){
+			// console.log("mousemove event")
 			_obj.getCursor(e);
 			_obj.trigger("mousemove",{x:_obj.cursor.x,y:_obj.cursor.y})
 		});
 		addEvent(this.canvas,"mouseout",function(e){
+			// console.log("mouseout event")
 			_obj.trigger("mouseout")
 		});
 		addEvent(this.canvas,"mouseover",function(e){
+			// console.log("mouseover event")
 			_obj.trigger("mouseover")
 		});
 		addEvent(this.canvas,"mousedown",function(e){
+			// console.log("mousedown event")
 			_obj.trigger("mousedown");
 		});
 		addEvent(this.canvas,"mouseup",function(e){
+			// console.log("mouseup event")
 			_obj.trigger("mouseup");
 		})
 		return this;
@@ -131,28 +128,28 @@
 	//将画布上的画进行模糊处理
 	Canvas.prototype.blur = function(imageData, w, h){
 
-		var steps = 3;
-		var scale = 4;
+		let steps = 3;
+		let scale = 4;
 		// Kernel width 0.9", trades off with alpha channel...
-		var smallW = Math.round(w / scale);
-		var smallH = Math.round(h / scale);
+		let smallW = Math.round(w / scale);
+		let smallH = Math.round(h / scale);
 
-		var canvas = document.createElement("canvas");
+		let canvas = document.createElement("canvas");
 		canvas.width = w;
 		canvas.height = h;
-		var ctx = canvas.getContext("2d");
+		let ctx = canvas.getContext("2d");
 		ctx.putImageData(imageData,0,0);
 
-		var copy = document.createElement("canvas");
+		let copy = document.createElement("canvas");
 		copy.width = smallW;
 		copy.height = smallH;
-		var copyCtx = copy.getContext("2d");
+		let copyCtx = copy.getContext("2d");
 
 		// Convolution with square top hat kernel, by shifting and redrawing image...
 		// Does not get brightness quite right...
-		for (var i=0;i<steps;i++) {
-			var scaledW = Math.max(1,Math.round(smallW - 2*i));
-			var scaledH = Math.max(1,Math.round(smallH - 2*i));
+		for (let i=0; i<steps; i++) {
+			let scaledW = Math.max(1,Math.round(smallW - 2*i));
+			let scaledH = Math.max(1,Math.round(smallH - 2*i));
 
 			copyCtx.clearRect(0,0,smallW,smallH);
 			copyCtx.drawImage(canvas, 0, 0, w, h, 0, 0, scaledW, scaledH);
@@ -168,7 +165,7 @@
 
 		// Because of the way putImageData replaces all the pixel values,
 		// we have to create a temporary canvas and put it there.
-		var overlayCanvas = document.createElement("canvas");
+		let overlayCanvas = document.createElement("canvas");
 		overlayCanvas.width = this.width;
 		overlayCanvas.height = this.height;
 		overlayCanvas.getContext("2d").putImageData(imageData, 0, 0);
@@ -197,7 +194,7 @@
 			try {
 				this.clipboard[name] = (img) ? img : this.ctx.getImageData(0, 0, this.width, this.height);
 				this.clipboardData[name] = this.clipboard[name].data;
-			}catch(e){};
+			}catch(e){}
 		}
 		return this;
 	}
@@ -212,34 +209,16 @@
 			try {
 				this.clipboard[name].data = this.clipboardData[name];
 				this.ctx.putImageData(this.clipboard[name], 0, 0);
-			}catch(e){};
+			}catch(e){}
 		}
 		return this;
 	}
 
 	//返回鼠标在画布上的位置
 	Canvas.prototype.getCursor = function(e){
-    this.cursor = {x: e.offsetX, y: e.offsetY};
-    return this.cursor;
-
-		var x;
-		var y;
-		if (e.pageX != undefined && e.pageY != undefined){
-			x = e.pageX;
-			y = e.pageY;
-		}else{
-			x = e.clientX + document.body.scrollLeft + document.body.scrollLeft +document.documentElement.scrollLeft;
-			y = e.clientY + document.body.scrollTop + document.body.scrollTop +document.documentElement.scrollTop;
-		}
-
-		var target = e.target
-		while(target){
-			x -= target.offsetLeft;
-			y -= target.offsetTop;
-			target = target.offsetParent;
-		}
-		this.cursor = {x:x, y:y};
+		this.cursor = {x: e.offsetX, y: e.offsetY};
 		return this.cursor;
+
 	}
 
 	// Attach a handler to an event for the Canvas object in a style similar to that used by jQuery
@@ -266,10 +245,10 @@
 	Canvas.prototype.trigger = function(ev,args){
 		if(typeof ev != "string") return;
 		if(typeof args != "object") args = {};
-		var o = [];
+		let o = [];
 		if(typeof this.events[ev]=="object"){
-			for(var i = 0 ; i < this.events[ev].length ; i++){
-				var e = G.extend(this.events[ev][i].e,args);
+			for(let i = 0 ; i < this.events[ev].length ; i++){
+				let e = G.extend(this.events[ev][i].e,args);
 				if(typeof this.events[ev][i].fn == "function") o.push(this.events[ev][i].fn.call(this,e))
 			}
 		}
