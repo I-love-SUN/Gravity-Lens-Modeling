@@ -54,6 +54,35 @@
             <el-button type="primary" class="button" @click="handleUploadUrl">Upload URL</el-button>
         </el-row>
 
+        <el-dialog title="Image Infomation"
+                   :visible.sync="dialogVisible"
+                   width="500px"
+        >
+            <el-form ref="form" :model="form" label-width="60px">
+                <el-form-item label="Select Image:" label-width="100px">
+                    <el-upload
+                            :file-list="fileList"
+                            :on-change="handleChange"
+                    >
+                        <el-button type="primary">Select</el-button>
+                        <div slot="tip" class="el-upload__tip" >Tips:只能上传jpg/png文件</div>
+                    </el-upload>
+                </el-form-item>
+                文件地址：{{form.imageURL}}
+                <el-form-item label="Image width:" label-width="100px">
+                    <el-input v-model="form.width" placeholder="Please input the width of image in pixel."></el-input>
+                </el-form-item>
+                <el-form-item label="Image length:" label-width="100px">
+                    <el-input v-model="form.length" placeholder="Please input the length of image in pixel."></el-input>
+                </el-form-item>
+                <el-form-item label="Pixel scale:" label-width="100px">
+                    <el-input v-model="form.pixscale" placeholder="Please input the pixel scale of image in pixel."></el-input>
+                </el-form-item>
+            </el-form>
+            <el-button @click="dialogVisible = false">取 消</el-button>
+            <el-button type="primary" @click=handleConfirm>确 定</el-button>
+
+        </el-dialog>
 
         <p>The Gravity Lens after modeling:</p><br/>
         <el-image id="myCanvas" style="width:400px;height:400px" class="grid-content bg-purple-light"></el-image>
@@ -83,12 +112,20 @@
                 img: null,
                 img_src: null,
 
-                // lets: '',
-                // ms: '',
-                // ms_src: '',
-                // containerEl_src: '',
-                // containerEl: '',
-                // timer: '',
+                lets: '',
+                ms: '',
+                ms_src: '',
+                containerEl_src: '',
+                containerEl: '',
+                timer: '',
+                form:{
+                    width: '',
+                    length: '',
+                    pixscale: '',
+                    imageURL: ''
+                },
+                fileList: [],
+                dialogVisible: false,
 
             }
         },
@@ -98,30 +135,56 @@
 
             handleSave(){
                 console.log('save')
-                this.lets.showModels();
+                this.lets.showModels(this.img_src.src);
             },
             handleLoad(){
                 console.log('load')
                 let input = e.target;
                 let reader = new FileReader();
                 reader.onload = function(){
-                    const text = reader.result;
-                    const data = JSON.parse(text);
+                    let text = reader.result;
+                    let data = JSON.parse(text);
                     this.lets.loadModel(data.components);
                 };
                 reader.readAsText(input.files[0]);
             },
             handleUpload(){
-                console.log('upload image')
-                let imageFile = HTMLInputElement.files[0];
-                let url = window.URL.createObjectURL(imageFile);
-                this.img.src = url;
-                this.img_src.src = url;
-                document.getElementById("hoopla-srcmodel").style.backgroundImage
-                    = "url(" + url + ")";
-                document.getElementById("hoopla-prediction").style.backgroundImage
-                    = "url(" + url + ")";
+                this.form.imageURL='';
+                this.form.pixscale='';
+                this.form.length='';
+                this.form.width='';
+                this.dialogVisible=true;
             },
+            handleConfirm(){
+                if(this.form.pixscale==null||this.form.imageURL==null){
+                    this.$alert('Please input entire information.','Incomplete input',{confirmButtonText:'Confirm'});
+                    return;
+                }
+                this.img.src = this.form.imageURL;
+                this.img_src.src = this.form.imageURL;
+                this.ms.tools.pop();
+                this.ms_src.tools.pop();
+                this.lets.length = this.form.length;
+                this.lets.width = this.form.width;
+                this.lets.pixscale = this.form.pixscale;
+                this.lets.srcmodelPaper.clear();
+                this.lets.srcmodelPaper.src = this.form.imageURL;
+                this.lets.predictionPaper.clear();
+                this.lets.predictionPaper.src = this.form.imageURL;
+                document.getElementById("hoopla-srcmodel").style.backgroundImage
+                    = "url(" + this.form.imageURL + ")";
+                document.getElementById("hoopla-prediction").style.backgroundImage
+                    = "url(" + this.form.imageURL + ")";
+                console.log(this.lets);
+                this.dialogVisible=false;
+            },
+            handleChange(file,fileList){
+                console.log(file);
+                this.fileList=fileList;
+                this.form.imageURL = window.URL.createObjectURL(file.raw);
+                console.log(this.form.imageURL);
+            },
+
 
             handleUploadUrl(){
                 console.log('upload URL')
@@ -320,31 +383,30 @@
 
              updateCanvas(p1) {
                  let ang = this.$data.lets.lens.ang2pix({x: p1[0], y: p1[1]});
-                 this.$data.ms.tools[0].mark.x = ang.x;
-                 this.$data.ms.tools[0].mark.y = ang.y;
-                 this.$data.ms.tools[0].mark.angle = p1[4];
-                 this.$data.ms.tools[0].mark.ry = p1[2]/(this.lets.lens.pixscale*Math.sqrt(p1[3]));
-                 this.$data.ms.tools[0].mark.rx = ms.tools[0].mark.ry * p1[3];
-                 this.$data.ms.renderTools();
+                 this.ms.tools[0].mark.x = ang.x;
+                 this.ms.tools[0].mark.y = ang.y;
+                 this.ms.tools[0].mark.angle = p1[4];
+                 this.ms.tools[0].mark.ry = p1[2]/(this.lets.lens.pixscale*Math.sqrt(p1[3]));
+                 this.ms.tools[0].mark.rx = ms.tools[0].mark.ry * p1[3];
+                 this.ms.renderTools();
 
                  let ang2 = this.$data.lets.lens.ang2pix({x: p1[5], y: p1[6]});
-                 this.$data.ms_src.tools[0].mark.x = ang2.x;
-                 this.$data.ms_src.tools[0].mark.y = ang2.y
-                 this.$data.ms_src.tools[0].mark.angle = p1[9];
-                 this.$data.ms_src.tools[0].mark.ry = p1[7]/(this.lets.lens.pixscale*Math.sqrt(p1[8]));
-                 this.$data.ms_src.tools[0].mark.rx = this.ms_src.tools[0].mark.ry *p1[8];
-                 this.$data.ms_src.renderTools();
+                 this.ms_src.tools[0].mark.x = ang2.x;
+                 this.ms_src.tools[0].mark.y = ang2.y
+                 this.ms_src.tools[0].mark.angle = p1[9];
+                 this.ms_src.tools[0].mark.ry = p1[7]/(this.lets.lens.pixscale*Math.sqrt(p1[8]));
+                 this.ms_src.tools[0].mark.rx = this.ms_src.tools[0].mark.ry *p1[8];
+                 this.ms_src.renderTools();
             },
 
             handleOptimization(){
                 console.log('optimization')
-                console.log(this.ref)
                 if(this.ms.tools.length === 0){
-                    window.alert('Please input Mass Model!');
+                    this.$alert('Please input Mass Model!','Incorrect operation',{confirmButtonText:'Confirm'});
                     return;
                 }
                 if(this.ms_src.tools.length === 0){
-                    window.alert('Please input Source Model!');
+                    this.$alert('Please input Source Model!','Incorrect operation',{confirmButtonText:'Confirm'});
                     return;
                 }
                 this.timer(8);
@@ -358,57 +420,57 @@
         },
 
         mounted() {
-            
+
             console.log("mounted");
-            console.log(document.getElementById('hoopla-srcmodel'));
             // this.imgd.crossOrigin="anonymous";
+            var that = this;
             this.imgd.src = 'https://cdn.rawgit.com/linan7788626/Hoopla/Preprocessing_input_pics/images/lensed_galaxy.jpg';
             this.imgd.width = 400;
             this.imgd.height = 400;
-
-            var lets= new Hoopla({
+            this.lets= new Hoopla({
                 id:'hoopla-srcmodel',
                 srcmodel: 'hoopla-srcmodel',
                 prediction: 'hoopla-prediction',
                 pixscale: 0.0225,
             })
-            var ms= new MarkingSurface({
+            this.ms= new MarkingSurface({
                 inputName: 'mass-model',
                 tool: MarkingSurface.EllipseTool,
             })
-            var containerEl = document.getElementById("marking-container")
-            containerEl.appendChild(ms.el)
-            var ms_src= new MarkingSurface({
+            this.containerEl = document.getElementById("marking-container")
+            this.containerEl.appendChild(this.ms.el)
+            this.ms_src= new MarkingSurface({
                 inputName: 'src-model',
                 tool: MarkingSurface.EllipseTool
             })
-            var containerEl_src= document.getElementById('marking-container-src')
-            containerEl_src.appendChild(ms_src.el)
+            this.containerEl_src= document.getElementById('marking-container-src')
+            this.containerEl_src.appendChild(this.ms_src.el)
             this.imgd.crossOrigin="anonymous";
 
-            let img = new Image();
-            img.src = "http://raw.githubusercontent.com/linan7788626/linan7788626.github.io/master/images/ering.jpg";
-            img.onload = function() {
-                console.log(img);
-                let width = img.width;
-                let height = img.height;
+            console.log(this.ms);
+            this.img = new Image();
+            this.img.src = "http://raw.githubusercontent.com/linan7788626/linan7788626.github.io/master/images/ering.jpg";
+            this.img.onload = ()=> {
+                console.log(this);
+                let width = this.img.width;
+                let height = this.img.height;
 
-                ms.addShape('image', {
-                    'xlink:href': img.src,
+                this.ms.addShape('image', {
+                    'xlink:href': that.img.src,
                     width: width,
                     height: height
                 });
-                ms.svg.attr({
+                this.ms.svg.attr({
                     width: 400,
                     height: 400
                 });
-                ms.rescale(0, 0, width, height);
-                let scaleX = 400 / img.width;
-                let scaleY = 400 / img.height;
+                this.ms.rescale(0, 0, width, height);
+                let scaleX = 400 / this.img.width;
+                let scaleY = 400 / this.img.height;
 
                 function getThetaE(d) {
-                    let a = d.rx * lets.pixscale;
-                    let b = d.ry * lets.pixscale;
+                    let a = d.rx * that.lets.pixscale;
+                    let b = d.ry * that.lets.pixscale;
                     return Math.sqrt(a * b);
                     //return Math.max(a , b);
                 }
@@ -424,12 +486,12 @@
                 }
 
                 function getCoords(d) {
-                    return lets.lens.pix2ang({x: scaleX * d.x, y: scaleY * d.y});
+                    return that.lets.lens.pix2ang({x: scaleX * d.x, y: scaleY * d.y});
                 }
 
 
                 function updateModel() {
-                    let data = JSON.parse(ms.getValue());
+                    let data = JSON.parse(this.getValue());
                     let components = data.map(function(d) {
                         let coords = getCoords(d);
                         return {
@@ -441,35 +503,35 @@
                             y: coords.y
                         }
                     });
-                    lets.updateModel(components);
-                    console.log("当前椭圆数量："+lets.lens.lens.length);
+                    that.lets.updateModel(components);
+                    // console.log("当前椭圆数量："+that.lets.lens.lens.length);
                 }
                 let debouncedUpdateModel = _.debounce(updateModel, 200);
-                ms.on('marking-surface:change', debouncedUpdateModel);
-            };
+                that.ms.on('marking-surface:change', debouncedUpdateModel);
+            }
 
-            let img_src = new Image();
-            img_src.src = "http://raw.githubusercontent.com/linan7788626/linan7788626.github.io/master/images/ering.jpg";
-            img_src.onload = function() {
-                let width = img_src.width;
-                let height = img_src.height;
+            this.img_src = new Image();
+            this.img_src.src = "http://raw.githubusercontent.com/linan7788626/linan7788626.github.io/master/images/ering.jpg";
+            this.img_src.onload = ()=>{
+                let width = this.img_src.width;
+                let height = this.img_src.height;
 
-                ms_src.addShape('image', {
-                    'xlink:href': img_src.src,
+                this.ms_src.addShape('image', {
+                    'xlink:href': that.img_src.src,
                     width: width,
                     height: height
                 });
-                ms_src.svg.attr({
+                this.ms_src.svg.attr({
                     width: 400,
                     height: 400
                 });
-                ms_src.rescale(0, 0, width, height);
-                let scaleX = 400 / img_src.width;
-                let scaleY = 400 / img_src.height;
+                this.ms_src.rescale(0, 0, width, height);
+                let scaleX = 400 / this.img_src.width;
+                let scaleY = 400 / this.img_src.height;
 
                 function getSize(d) {
-                    let a = d.rx * lets.pixscale;
-                    let b = d.ry * lets.pixscale;
+                    let a = d.rx * that.lets.pixscale;
+                    let b = d.ry * that.lets.pixscale;
                     return Math.sqrt(a * b);
                     //return Math.max(a , b);
                 }
@@ -485,11 +547,11 @@
                 }
 
                 function getCoords(d) {
-                    return lets.lens.pix2ang({x: scaleX * d.x, y: scaleY * d.y});
+                    return that.lets.lens.pix2ang({x: scaleX * d.x, y: scaleY * d.y});
                 }
 
                 function updateModel() {
-                    let data = JSON.parse(ms_src.getValue());
+                    let data = JSON.parse(this.getValue());
                     let components = data.map(function(d) {
                         let coords = getCoords(d);
                         return {
@@ -501,10 +563,10 @@
                             y: coords.y
                         }
                     });
-                    lets.updateModel(components);
+                    that.lets.updateModel(components);
                 }
                 let debouncedUpdateModel = _.debounce(updateModel, 200);
-                ms_src.on('marking-surface:change', debouncedUpdateModel);
+                that.ms_src.on('marking-surface:change', debouncedUpdateModel);
             }
 
 
@@ -513,7 +575,8 @@
             });
 
             let it=0;
-            let timer = async(timeout) => {
+            this.timer = async(timeout) => {
+                console.log(this);
                 for(let i = 0; i< timeout; i++) {
                     let p0;
                     let xc1, xc2, re, ql, phl;
@@ -521,17 +584,17 @@
                         console.log("建模结果有偏差，waiting...");
                         i/=2;
                     }
-                    xc1 = lets.models[0].components[1].x;
-                    xc2 = lets.models[0].components[1].y;
-                    re  = lets.models[0].components[1].theta_e;
-                    ql  = lets.models[0].components[1].ell;
-                    phl = lets.models[0].components[1].ang;
+                    xc1 = this.lets.models[0].components[1].x;
+                    xc2 = this.lets.models[0].components[1].y;
+                    re  = this.lets.models[0].components[1].theta_e;
+                    ql  = this.lets.models[0].components[1].ell;
+                    phl = this.lets.models[0].components[1].ang;
                     let yc1, yc2, sig2, qs, phs;
-                    yc1 = lets.models[0].components[0].x;
-                    yc2 = lets.models[0].components[0].y;
-                    sig2= lets.models[0].components[0].size;
-                    qs  = lets.models[0].components[0].ell;
-                    phs = lets.models[0].components[0].ang;
+                    yc1 = this.lets.models[0].components[0].x;
+                    yc2 = this.lets.models[0].components[0].y;
+                    sig2= this.lets.models[0].components[0].size;
+                    qs  = this.lets.models[0].components[0].ell;
+                    phs = this.lets.models[0].components[0].ang;
 
                     p0 = [xc1,xc2,re,ql,phl,yc1,yc2,sig2,qs,phs];
                     let p = optimize.fmin(this.chi2_rescale, p0, {ftol: 1e-6, maxiter: 50});
@@ -542,20 +605,20 @@
                     console.log(p1);
                     this.show_res(p1);
 
-                    lets.models[0].components[1].x = p1[0];
-                    lets.models[0].components[1].y = p1[1];
-                    lets.models[0].components[1].theta_e = p1[2];
-                    lets.models[0].components[1].ell = p1[3];
-                    lets.models[0].components[1].ang = p1[4];
-                    lets.models[0].components[0].x = p1[5];
-                    lets.models[0].components[0].y = p1[6];
-                    lets.models[0].components[0].size = p1[7];
-                    lets.models[0].components[0].ell = p1[8];
-                    lets.models[0].components[0].ang = p1[9];
-                    lets.loadModel(lets.models[0].components);
-                    console.log(lets.models[0].components);
-                    lets.update({x:lets.lens.ang2pix(p1[0]),y:lets.lens.ang2pix(p1[1])});
-                    lets.freezeSrcModel = true;
+                    this.lets.models[0].components[1].x = p1[0];
+                    this.lets.models[0].components[1].y = p1[1];
+                    this.lets.models[0].components[1].theta_e = p1[2];
+                    this.lets.models[0].components[1].ell = p1[3];
+                    this.lets.models[0].components[1].ang = p1[4];
+                    this.lets.models[0].components[0].x = p1[5];
+                    this.lets.models[0].components[0].y = p1[6];
+                    this.lets.models[0].components[0].size = p1[7];
+                    this.lets.models[0].components[0].ell = p1[8];
+                    this.lets.models[0].components[0].ang = p1[9];
+                    this.lets.loadModel(this.lets.models[0].components);
+                    console.log(this.lets.models[0].components);
+                    this.lets.update({x:this.lets.lens.ang2pix(p1[0]),y:this.lets.lens.ang2pix(p1[1])});
+                    this.lets.freezeSrcModel = true;
                     this.updateCanvas(p1)
                     await sleep(1);
 
