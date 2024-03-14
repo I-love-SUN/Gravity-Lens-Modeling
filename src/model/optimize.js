@@ -4,7 +4,7 @@ window.randomNormal = function () {
     // http://en.wikipedia.org/wiki/Box%E2%80%93Muller_transform
     var f, u, v, s = 0.0;
     if (window._randNorm !== null &&
-            typeof(window._randNorm) !== "undefined") {
+        typeof(window._randNorm) !== "undefined") {
         var tmp = window._randNorm;
         window._randNorm = null;
         return tmp;
@@ -25,7 +25,6 @@ window.optimize = (function () {
         // The existential operator;
         return typeof(x) !== "undefined" && x !== null;
     };
-
 
     // ======= //
     //         //
@@ -125,7 +124,7 @@ window.optimize = (function () {
         l = inds.slice(0, m);
         r = inds.slice(m, inds.length);
         return vector._merge(vector._rec_argsort(l, data),
-                             vector._rec_argsort(r, data), data);
+            vector._rec_argsort(r, data), data);
     };
 
     vector._merge = function (l, r, data) {
@@ -222,9 +221,9 @@ window.optimize = (function () {
         nonzdelt = 0.05;
         zdelt = 0.00025;
 
-        sim = new Array();
+        sim = [];
         sim[0] = x0;
-        fsim = new Array();
+        fsim = [];
         fsim[0] = func(x0);
 
         for (i = 0; i < N; i++) {
@@ -248,19 +247,19 @@ window.optimize = (function () {
             iterations += 1
             // A break based on xtol needs to be included too.
             if (optimize._max_abs_diff(fsim[0], fsim.slice(1, fsim.length))
-                    <= ftol)
+                <= ftol)
                 break;
 
             xbar = vector.fmult(1.0 / N,
-                    vector.reduce(sim.slice(0, sim.length - 1)));
+                vector.reduce(sim.slice(0, sim.length - 1)));
             xr = vector.add(vector.fmult(1 + rho, xbar),
-                            vector.fmult(-rho, sim[sim.length - 1]));
+                vector.fmult(-rho, sim[sim.length - 1]));
             fxr = func(xr);
 
             if (fxr < fsim[0]) {
                 var xe, fxe;
                 xe = vector.add(vector.fmult(1 + rho * chi, xbar),
-                            vector.fmult(-rho * chi, sim[sim.length - 1]));
+                    vector.fmult(-rho * chi, sim[sim.length - 1]));
                 fxe = func(xe);
                 if (fxe < fxr) {
                     sim[sim.length - 1] = xe;
@@ -300,16 +299,18 @@ window.optimize = (function () {
                     if (doshrink) {
                         for (j = 1; j < N + 1; j++) {
                             sim[j] = vector.add(sim[0], vector.fmult(sigma,
-                                            vector.subtract(sim[j], sim[0])));
+                                vector.subtract(sim[j], sim[0])));
                             fsim[j] = func(sim[j]);
                         }
                     }
                 }
             }
 
+
             inds = vector.argsort(fsim);
             fsim = vector.take(fsim, inds);
             sim = vector.take(sim, inds);
+
         }
 
         x = sim[0];
@@ -321,8 +322,8 @@ window.optimize = (function () {
             console.log("Converged in", iterations, "iterations.");
 
         console.log("Function value =", fval);
-
-        return x;
+        let res = {iterations,fval};
+        return {x, res};
     };
 
     optimize.newton = function (fn, x0, opts) {
@@ -401,7 +402,7 @@ window.optimize = (function () {
             norm = 1.0 / Math.sqrt(2 * Math.PI * v2);
             for (t = -10; t <= 10; t++)
                 result.push(sky + Math.exp(-0.5 * t * t / v2) * norm +
-                        noise * window.randomNormal());
+                    noise * window.randomNormal());
             return result;
         };
 

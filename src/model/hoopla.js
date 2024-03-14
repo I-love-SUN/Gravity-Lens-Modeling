@@ -202,7 +202,7 @@ import {Conrec} from "@/model/conrec";
 		if(!mode || typeof mode!=="string") return;
 
 		// Have we previously made this component layer?
-		let previous = (canvas.clipboard[mode]) ? true : false;
+		let previous = !!(canvas.clipboard[mode]);
 
 		// Load in the previous version if we have it (this will save us setting the RGB)
 		let imgData = (previous) ? canvas.clipboard[mode] : canvas.ctx.createImageData(lens.w, lens.h);
@@ -307,11 +307,12 @@ import {Conrec} from "@/model/conrec";
 			_obj.freezeSrcModel = !_obj.freezeSrcModel;
 			let tag = document.getElementById('tag');
 			if(_obj.freezeSrcModel){
-				tag.style.display = "block";
+				tag.innerHTML = "<span class=\"tooltiptext\">Freezed Mode is unactivated, click left button of the mouse to turn into interactive mode.</span>Freezed"
+				tag.style.backgroundColor = "lightblue";
 			}else{
-				tag.style.display = "none";
+				tag.innerHTML = "<span class=\"tooltiptext\">Interactive Mode is activated, click left button of the mouse to turn into freezed mode.</span>Interactive";
+				tag.style.backgroundColor = "orange";
 			}
-
 		});
 		return this;
 	}

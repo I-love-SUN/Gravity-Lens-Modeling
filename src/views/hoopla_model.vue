@@ -14,12 +14,12 @@
             <el-row :gutter="20">
                 <el-col :span="8">
                     <div  class="disimg grid-content bg-purple-light">
-                        <div id="marking-container"   class="bar"></div>
+                        <div id="marking-container" class="bar"></div>
                     </div>
                 </el-col>
                 <el-col :span="8">
                     <div  class="disimg grid-content bg-purple-light">
-                        <div id="marking-container-src"   class="bar"></div>
+                        <div id="marking-container-src" class="bar"></div>
                     </div>
                 </el-col>
             </el-row>
@@ -31,20 +31,48 @@
                 <el-col :span="8">
                     <div  class="disimg grid-content bg-purple-light">
                         <div id="hoopla-srcmodel"  class="bar">
-                            <p id="tag" style="display: none">Freezed</p>
+                            <p id="tag" class="tooltip" style="display: block">
+                                <span class="tooltiptext">Interactive Mode is activated, click left button of the mouse to turn into Freezed mode.</span>
+                                Interactive
+                            </p>
                         </div>
                     </div>
                 </el-col>
                 <el-col :span="8">
                     <div  class="disimg grid-content bg-purple-light">
-                        <div id="hoopla-prediction"   class="bar"></div>
+                        <div id="hoopla-prediction"   class="bar">
+                            <p id="tag2" style="background-color: #8ee58a;display: none;">Running...</p>
+                        </div>
                    </div>
                 </el-col>
             </el-row>
+            <el-row :gutter="20">
+                <el-col :span="8"><div class="grid-content bg-purple"><h3 class="modeltitle">Residual Map</h3></div></el-col>
+                <el-col :span="8"><div class="grid-content bg-purple"><h3 class="modeltitle">Chi-Square Curve</h3></div></el-col>
+            </el-row>
+            <el-row :gutter="20">
+                <el-col :span="8">
+                    <div class="disimg grid-content bg-purple-light">
+                        <canvas id="myCanvas"  width="400px" height="400px" style="background-color: whitesmoke;border:1px solid #d3d3d3;float: left;margin: 5px; "></canvas>
+                    </div>
+                </el-col>
+                <el-col :span="8">
+                    <div class="disimg grid-content bg-purple-light">
+                        <canvas id="Curve" width="400px" height="400px" style="background-color: whitesmoke;border:1px solid #d3d3d3;float: left;margin: 5px;"></canvas>
+                    </div>
+                </el-col>
+            </el-row>
         </div>
+
         <el-row style="margin-top: 30px">
             <el-button type="primary" class="button" @click="handleSave">Save Models</el-button>
-            <el-button type="primary" class="button" @click="handleLoad">Load Models</el-button>
+            <input
+                ref="fileInput"
+                type="file"
+                style="display: none"
+                @change="handleLoadModel"
+            />
+            <el-button type="primary" class="button" @click="openFileInput">Load Models</el-button>
             <el-button type="primary" class="button" @click="handleUpload">Upload Images</el-button>
             <el-button type="primary" class="button" @click="handleOptimization">Optimization</el-button>
         </el-row>
@@ -84,22 +112,20 @@
 
         </el-dialog>
 
-        <p>The Gravity Lens after modeling:</p><br/>
-        <el-image id="myCanvas" style="width:400px;height:400px" class="grid-content bg-purple-light"></el-image>
-
     </div>
 
 </template>
 
 <script>
     // @ is an alias to /src
-    import "../tools/ellipse"
-    import "../tools/marking-surface"
-    import "../model/conrec"
-    import "../model/d3"
-    import "../model/eelens"
-    import "../model/optimize"
-    import "@/model/hoopla"
+    import "../tools/ellipse";
+    import "../tools/marking-surface";
+    import "../model/conrec";
+    import "../model/d3";
+    import "../model/eelens";
+    import "../model/optimize";
+    import "@/model/hoopla";
+    import {Chart} from 'chart.js'
 
     export default {
         name: 'hoopla_model',
@@ -137,14 +163,36 @@
                 console.log('save')
                 this.lets.showModels(this.img_src.src);
             },
-            handleLoad(){
-                console.log('load')
+            openFileInput(){
+                this.$refs.fileInput.click();
+            },
+            handleLoadModel(e){
+                console.log('load');
                 let input = e.target;
                 let reader = new FileReader();
-                reader.onload = function(){
+                reader.onload = ()=>{
                     let text = reader.result;
                     let data = JSON.parse(text);
-                    this.lets.loadModel(data.components);
+                    let components = data.components;
+                    this.lets.loadModel(components);
+                    if(this.ms.tools.length===0){
+                        this.ms.addTool();
+                    }
+                    if(this.ms_src.tools.length===0){
+                        this.ms_src.addTool();
+                    }
+                    console.log(components);
+
+                    // lets.pixscale = pixscale;
+                    this.lets.freezeSrcModel = true;
+                    this.updateCanvas(components);
+                    this.lets.update({x:this.lets.lens.ang2pix(components[1].x),y:this.lets.lens.ang2pix(components[1].y)});
+                    console.log(this.lets.freezeSrcModel);
+                    let tag = document.getElementById('tag');
+                    tag.innerHTML = "<span class=\"tooltiptext\">Freezed Mode is unactivated, click left button of the mouse to turn into interactive mode.</span>Freezed"
+                    tag.style.backgroundColor = "lightblue";
+                    this.lets.update({x:this.lets.lens.ang2pix(components[1].x),y:this.lets.lens.ang2pix(components[1].y)});
+                    this.lets.freezeSrcModel = true;
                 };
                 reader.readAsText(input.files[0]);
             },
@@ -156,10 +204,11 @@
                 this.dialogVisible=true;
             },
             handleConfirm(){
-                if(this.form.pixscale==null||this.form.imageURL==null){
+                if((this.form.pixscale===''||null)||(this.form.imageURL===''||null)){
                     this.$alert('Please input entire information.','Incomplete input',{confirmButtonText:'Confirm'});
                     return;
                 }
+                this.imgd.src = this.form.imageURL;
                 this.img.src = this.form.imageURL;
                 this.img_src.src = this.form.imageURL;
                 this.ms.tools.pop();
@@ -203,7 +252,6 @@
                     ql = 1.0/ql-0.0000000001;
                     phl = Math.PI * (-phl / 180);
                 }
-
                 let	alpha = { x: 0.0, y: 0.0 };
                 let x,y,cs, sn;
                 let sx_r, sy_r, psi, sq, pd1, pd2, fx1, fx2, qs, a1, a2;
@@ -311,25 +359,22 @@
                 let redstd = this.standardDeviation(red);
                 for(let row = 0 ; row < this.imgd.width ; row+=fscale){
                     for(let col = 0 ; col < this.imgd.height ; col+=fscale){
-                        i = row*this.imgd.height+col;
-                        i2 = row/fscale*this.imgd.height/fscale+col/fscale;
-                        x = col*0.0225 - 4.5;
-                        y = row*0.0225 - 4.5;
+                        let i = row*this.imgd.height+col;
+                        let i2 = row/fscale*this.imgd.height/fscale+col/fscale;
+                        let x = col*0.0225 - 4.5;
+                        let y = row*0.0225 - 4.5;
                         testimg[i] = this.model_lensed_images(p, x, y);
-                        chi[i2] = (red[i] -
-                            testimg[i])/redstd/redstd/(chi.length);
+                        chi[i2] = (red[i] - testimg[i])/redstd/redstd/(chi.length);
                     }
                 }
                 let res = optimize.vector.dot(chi, chi);
-                console.log(res);
+                // console.log(res);
 
                 return res;
             },
 
 
             show_res(p) {
-                let i;
-
                 const c = document.getElementById("myCanvas");
                 const ctx = c.getContext("2d");
                 ctx.drawImage(this.imgd, 0, 0);
@@ -337,12 +382,11 @@
                 let data = dstdata.data;
 
                 let red = new Array(data.length/4);
-                i = 0;
+                let i = 0;
                 const n = red.length;
                 for(; i < n; i ++) {
                     red[i] = data[i*4]/255.;
                 }
-
 
                 let chi = new Array(red.length);
                 let testimg = new Array(red.length);
@@ -350,8 +394,8 @@
                 for(let row = 0 ; row < 400 ; row++){
                     for(let col = 0 ; col < 400 ; col++){
                         i = row*400+col;
-                        x = col*0.0225 - 4.5;
-                        y = row*0.0225 - 4.5;
+                        let x = col*0.0225 - 4.5;
+                        let y = row*0.0225 - 4.5;
                         testimg[i] = this.model_lensed_images(p, x, y);
                         //chi[i] = (red[i] - testimg[i])*red[i]*red[i];
                         chi[i] = (red[i] - testimg[i])/redstd/redstd;
@@ -359,12 +403,10 @@
                 }
                 let res = optimize.vector.dot(chi, chi);
                 console.log(res);
-
                 for (let y = 0; y < this.imgd.width; ++y) {
                     for (let x = 0; x < this.imgd.height; ++x) {
                         let index = (y * this.imgd.width + x) * 4;
                         let index2 = (y * this.imgd.width + x);
-
                         //data[index]   = Math.floor(red[index2]*255);    // red
                         //data[index]   = Math.floor(testimg[index2]*255);    // red
                         data[index]   = Math.floor(Math.abs(testimg[index2]-red[index2])*255);    // red
@@ -375,27 +417,29 @@
                     }
                 }
 
-                dstdata.data = data;
+                for (let i = 0; i < data.length; i++) {
+                    dstdata.data[i] = data[i];
+                }
                 ctx.putImageData(dstdata, 0, 0);
                 return res;
             },
 
 
-             updateCanvas(p1) {
-                 let ang = this.$data.lets.lens.ang2pix({x: p1[0], y: p1[1]});
+             updateCanvas(components) {
+                 let ang = this.lets.lens.ang2pix({x: components[1].x, y: components[1].y});
                  this.ms.tools[0].mark.x = ang.x;
                  this.ms.tools[0].mark.y = ang.y;
-                 this.ms.tools[0].mark.angle = p1[4];
-                 this.ms.tools[0].mark.ry = p1[2]/(this.lets.lens.pixscale*Math.sqrt(p1[3]));
-                 this.ms.tools[0].mark.rx = ms.tools[0].mark.ry * p1[3];
+                 this.ms.tools[0].mark.angle = components[1].ang ;
+                 this.ms.tools[0].mark.ry = components[1].theta_e/(this.lets.lens.pixscale*Math.sqrt(components[1].ell));
+                 this.ms.tools[0].mark.rx = this.ms.tools[0].mark.ry * components[1].ell;
                  this.ms.renderTools();
 
-                 let ang2 = this.$data.lets.lens.ang2pix({x: p1[5], y: p1[6]});
+                 let ang2 = this.lets.lens.ang2pix({x: components[0].x, y: components[0].y});
                  this.ms_src.tools[0].mark.x = ang2.x;
                  this.ms_src.tools[0].mark.y = ang2.y
-                 this.ms_src.tools[0].mark.angle = p1[9];
-                 this.ms_src.tools[0].mark.ry = p1[7]/(this.lets.lens.pixscale*Math.sqrt(p1[8]));
-                 this.ms_src.tools[0].mark.rx = this.ms_src.tools[0].mark.ry *p1[8];
+                 this.ms_src.tools[0].mark.angle = components[0].ang;
+                 this.ms_src.tools[0].mark.ry = components[0].size/(this.lets.lens.pixscale*Math.sqrt(components[0].ell ));
+                 this.ms_src.tools[0].mark.rx = this.ms_src.tools[0].mark.ry *components[0].ell ;
                  this.ms_src.renderTools();
             },
 
@@ -409,7 +453,17 @@
                     this.$alert('Please input Source Model!','Incorrect operation',{confirmButtonText:'Confirm'});
                     return;
                 }
-                this.timer(8);
+                let tag2 = document.getElementById('tag2');
+                tag2.style.display = 'block';
+                console.log(tag2);
+
+                let timerCallback = async () => {
+                    await this.timer(8); // 执行1次timer函数
+                    console.log(this.lets);
+                    tag2.style.display = 'none';
+                }
+
+                timerCallback(); // 将迭代次数作为参数传递给timerCallback函数
             },
 
         },
@@ -422,8 +476,8 @@
         mounted() {
 
             console.log("mounted");
-            // this.imgd.crossOrigin="anonymous";
             var that = this;
+            this.imgd.crossOrigin="anonymous";
             this.imgd.src = 'https://cdn.rawgit.com/linan7788626/Hoopla/Preprocessing_input_pics/images/lensed_galaxy.jpg';
             this.imgd.width = 400;
             this.imgd.height = 400;
@@ -441,28 +495,26 @@
             this.containerEl.appendChild(this.ms.el)
             this.ms_src= new MarkingSurface({
                 inputName: 'src-model',
-                tool: MarkingSurface.EllipseTool
+                tool: MarkingSurface.EllipseTool,
             })
             this.containerEl_src= document.getElementById('marking-container-src')
             this.containerEl_src.appendChild(this.ms_src.el)
-            this.imgd.crossOrigin="anonymous";
 
-            console.log(this.ms);
             this.img = new Image();
             this.img.src = "http://raw.githubusercontent.com/linan7788626/linan7788626.github.io/master/images/ering.jpg";
             this.img.onload = ()=> {
-                console.log(this);
                 let width = this.img.width;
                 let height = this.img.height;
 
                 this.ms.addShape('image', {
                     'xlink:href': that.img.src,
                     width: width,
-                    height: height
+                    height: height,
                 });
                 this.ms.svg.attr({
                     width: 400,
-                    height: 400
+                    height: 400,
+                    color: 'white'
                 });
                 this.ms.rescale(0, 0, width, height);
                 let scaleX = 400 / this.img.width;
@@ -523,7 +575,8 @@
                 });
                 this.ms_src.svg.attr({
                     width: 400,
-                    height: 400
+                    height: 400,
+                    color: 'grey'
                 });
                 this.ms_src.rescale(0, 0, width, height);
                 let scaleX = 400 / this.img_src.width;
@@ -569,6 +622,50 @@
                 that.ms_src.on('marking-surface:change', debouncedUpdateModel);
             }
 
+            let chartInstance = null // 声明一个全局变量来存储 Chart 实例
+            function drawChiSquareCurve(chiSquaredValues) {
+                let ctx = document.getElementById("Curve");
+                if (chartInstance) {
+                    // 如果之前有 Chart 实例存在，则更新其数据和选项
+                    chartInstance.data.labels = Array.from({ length: chiSquaredValues.length }, (_, i) => 50*(i + 1));
+                    chartInstance.data.datasets[0].data = chiSquaredValues;
+                    chartInstance.update();
+                } else {
+                    // 如果之前没有 Chart 实例存在，则创建一个新的实例
+                    chartInstance = new Chart(ctx, {
+                        type: 'line',
+                        data: {
+                            labels: Array.from({length: chiSquaredValues.length}, (_, i) => i + 1),
+                            datasets: [
+                                {
+                                    label: '卡方值',
+                                    data: chiSquaredValues,
+                                    borderColor: 'blue',
+                                    backgroundColor: 'rgba(0, 0, 255, 0.1)',
+                                },
+                            ],
+                        },
+                        options: {
+                            responsive: true,
+                            scales: {
+                                x: {
+                                    type: 'category',
+                                    scaleLabel: {
+                                        display: true,
+                                        labelString: '迭代次数',
+                                    },
+                                },
+                                y: {
+                                    scaleLabel: {
+                                        display: true,
+                                        labelString: '卡方值',
+                                    },
+                                },
+                            },
+                        },
+                    });
+                }
+            }
 
             const sleep = (timeout= 1000)=>new Promise((resolve, reject)=>{
                 setTimeout(resolve, timeout);
@@ -576,7 +673,7 @@
 
             let it=0;
             this.timer = async(timeout) => {
-                console.log(this);
+                let chiSquaredValues = [];
                 for(let i = 0; i< timeout; i++) {
                     let p0;
                     let xc1, xc2, re, ql, phl;
@@ -598,12 +695,14 @@
 
                     p0 = [xc1,xc2,re,ql,phl,yc1,yc2,sig2,qs,phs];
                     let p = optimize.fmin(this.chi2_rescale, p0, {ftol: 1e-6, maxiter: 50});
-                    let p1=p.x;
+                    let p1=p.x,chival = p.res;
                     if(it===p[1]&&it<50) break;
-                    it=p.iterations;
+                    it=chival.iterations;
+                    chiSquaredValues.push(chival.fval);
                     // let p1 = optimize.newton(chi2_rescale, p0, {ftol: 1e-6, maxiter: 100});
                     console.log(p1);
                     this.show_res(p1);
+                    drawChiSquareCurve(chiSquaredValues);
 
                     this.lets.models[0].components[1].x = p1[0];
                     this.lets.models[0].components[1].y = p1[1];
@@ -631,19 +730,20 @@
 </script>
 
 <style>
+
     .input{
         width: 730px;
         margin-right: 25px;
     }
-    #tag{
-        width:60px;
+    #tag,#tag2{
+        width:80px;
         font-family: Arial;
-        background-color: lightblue;
+        background-color: orange;
         text-align: center;
         font-size: medium;
         color: black;
         position: absolute;
-        left: 320px;
+        left: 300px;
         padding: 5px;
         border-radius: 5px;
         transition: opacity 0.3s ease-in-out;
@@ -671,9 +771,11 @@
     }
     .bg-purple {
         background: #d3dce6;
+
     }
     .bg-purple-light {
         background: #e5e9f2;
+        /*background-color: #090b03;*/
     }
     .grid-content {
         border-radius: 4px;
@@ -719,7 +821,7 @@
     .bar {
         width: 400px;
         height: 400px;
-        border: 1px solid #666666;
+        border: 1px solid ;
         background-image: url("http://raw.githubusercontent.com/linan7788626/linan7788626.github.io/master/images/ering.jpg");
         background-size: 400px 400px;
         border-radius: 4px;
@@ -762,11 +864,6 @@
         right: 0;
     }
 
-    #homebutton {
-        position: absolute;
-        left: 1035px;
-        top: 30px;
-    }
 
 
     .Uploadbtn .input-upload {
@@ -779,6 +876,27 @@
         height:100%;
         width:100%;
     }
+    .tooltip {
+        position: relative;
+        display: inline-block;
+    }
 
+    .tooltip .tooltiptext {
+        visibility: hidden;
+        width: 220px;
+        background-color: black;
+        color: white;
+        text-align: center;
+        border-radius: 6px;
+        padding: 5px 0;
+        /* Position the tooltip */
+        position: absolute;
+        bottom: 125%;
+        margin-left: -70px;
+    }
+
+    .tooltip:hover .tooltiptext {
+        visibility: visible;
+    }
 
 </style>
